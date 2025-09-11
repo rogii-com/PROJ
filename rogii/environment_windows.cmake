@@ -7,7 +7,7 @@ CNPM_ADD_PACKAGE(
     VERSION
         3.50.4
     BUILD_NUMBER
-        0
+        1
     TAG
-        "_8ed5e7365e"
+        "brdev-rogii-v3.50.4-re6074c"
 )
