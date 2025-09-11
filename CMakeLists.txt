@@ -16,6 +16,52 @@ project(PROJ
   LANGUAGES C CXX
 )
 
+# ROGII/CNPM integration
+# Allow building in environments that use CNPM-provided toolchains/deps (sqlite, SDK, etc.)
+set(ROGII_FOLDER_PATH "${CMAKE_CURRENT_LIST_DIR}/rogii")
+if(EXISTS "${ROGII_FOLDER_PATH}/npm/Include.cmake")
+  include(${ROGII_FOLDER_PATH}/npm/Include.cmake)
+  include(${ROGII_FOLDER_PATH}/environment.cmake)
+
+  # Disable strict version checks for toolchain packages if present
+  set(MSVS_PACKAGE__DISABLE_VERSION_CHECK ON CACHE BOOL "" FORCE)
+  set(WINDOWSSDK_PACKAGE__DISABLE_VERSION_CHECK ON CACHE BOOL "" FORCE)
+
+  # Prepare packages from configured repositories
+  CNPM_PREPARE_PACKAGES(
+    DEFAULT_REPOSITORY_URLS "$ENV{CNPM_URLS}"
+  )
+
+  # Help CMake find helper executables (e.g. sqlite3) inside CNPM packages
+  # by extending program search path with all extracted "bin" folders.
+  #file(GLOB _CNPM_BIN_DIRS "${CMAKE_BINARY_DIR}/3rd_party/*/bin")
+  #if(_CNPM_BIN_DIRS)
+  #  list(APPEND CMAKE_PROGRAM_PATH ${_CNPM_BIN_DIRS})
+  #endif()
+
+  # Also help find_package() locate CNPM-provided CMake config packages and
+  # headers/libs by extending CMAKE_PREFIX_PATH with extracted package roots.
+  #file(GLOB _CNPM_PACKAGE_ROOTS "${CMAKE_BINARY_DIR}/3rd_party/*")
+  #if(_CNPM_PACKAGE_ROOTS)
+  #  list(APPEND CMAKE_PREFIX_PATH ${_CNPM_PACKAGE_ROOTS})
+  #endif()
+
+  # Wire CNPM-provided sqlite3 targets into PROJ build variables
+  if(TARGET sqlite3)
+    get_target_property(_CNPM_SQLITE3_EXE sqlite3 IMPORTED_LOCATION)
+    if(EXISTS "${_CNPM_SQLITE3_EXE}")
+      set(EXE_SQLITE3 "${_CNPM_SQLITE3_EXE}" CACHE FILEPATH "sqlite3 from CNPM" FORCE)
+    endif()
+  endif()
+
+  if(TARGET SQLite::SQLite3)
+    if(NOT DEFINED SQLite3_VERSION)
+      set(SQLite3_VERSION "3.50.4" CACHE STRING "SQLite3 version from CNPM" FORCE)
+    endif()
+  endif()
+
+endif()
+
 # Only interpret if() arguments as variables or keywords when unquoted
 cmake_policy(SET CMP0054 NEW)
 
@@ -206,9 +252,8 @@ message(STATUS "nlohmann/json: ${NLOHMANN_JSON}")
 # Check for sqlite3
 ################################################################################
 
-find_program(EXE_SQLITE3 sqlite3)
-if(NOT EXE_SQLITE3)
-  message(SEND_ERROR "sqlite3 binary not found!")
+if(NOT DEFINED EXE_SQLITE3)
+  message(FATAL_ERROR "EXE_SQLITE3 is not defined. Provide path to sqlite3 executable (e.g. from CNPM package).")
 endif()
 
 # Deprecated variables since PROJ 9.4.0
@@ -221,7 +266,10 @@ if(DEFINED SQLITE3_LIBRARY)
   set(SQLite3_LIBRARY ${SQLITE3_LIBRARY})
 endif()
 
-find_package(SQLite3 REQUIRED)
+if(NOT TARGET SQLite::SQLite3)
+  message(FATAL_ERROR "SQLite::SQLite3 target not found. Provide SQLite via CNPM package before configuring.")
+endif()
+set(SQLite3_FOUND TRUE)
 
 # Would build and run with older versions, but with horrible performance
 # See https://github.com/OSGeo/PROJ/issues/1718
