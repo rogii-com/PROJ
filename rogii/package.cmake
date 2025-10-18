@@ -82,5 +82,30 @@ foreach(COMPONENT_NAME ${COMPONENT_NAMES})
             ${COMPONENT_NAME}
         EXCLUDE_FROM_ALL
     )
+
+    # Also place PROJ data files next to the runtime for simpler app deployment
+    set(_PROJ_SHARE_DIR "${CMAKE_CURRENT_LIST_DIR}/share/proj")
+    if(EXISTS "${_PROJ_SHARE_DIR}/proj.db")
+        install(
+            FILES
+                "${_PROJ_SHARE_DIR}/proj.db"
+            DESTINATION
+                .
+            COMPONENT
+                ${COMPONENT_NAME}
+            EXCLUDE_FROM_ALL
+        )
+    endif()
+    if(EXISTS "${_PROJ_SHARE_DIR}/proj.ini")
+        install(
+            FILES
+                "${_PROJ_SHARE_DIR}/proj.ini"
+            DESTINATION
+                .
+            COMPONENT
+                ${COMPONENT_NAME}
+            EXCLUDE_FROM_ALL
+        )
+    endif()
 endforeach()
 
