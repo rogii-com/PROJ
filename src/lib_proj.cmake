@@ -564,6 +564,16 @@ set_target_properties(proj
   PROPERTIES
   LINKER_LANGUAGE CXX)
 
+# Ensure runtime lookup of dependencies (e.g., sqlite3) works on Linux by
+# embedding relative RPATHs. This allows loaders to find libs placed next to
+# libproj.so, or in a sibling bin/ folder within the same package root.
+if(UNIX AND NOT APPLE)
+  set_target_properties(proj PROPERTIES
+    BUILD_RPATH "\${ORIGIN}"
+    INSTALL_RPATH "\${ORIGIN}"
+  )
+endif()
+
 ##############################################
 # Link properties
 ##############################################

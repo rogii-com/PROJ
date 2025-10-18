@@ -12,7 +12,7 @@ CNPM_ADD_PACKAGE(
     VERSION
         3.50.4
     BUILD_NUMBER
-        1689
+        1725
     TAG
         gxx14.2.0
 )

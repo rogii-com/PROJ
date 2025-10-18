@@ -6,8 +6,10 @@ CNPM_ADD_PACKAGE(
         sqlite
     VERSION
         3.50.4
+    ARCHITECTURE
+        amd64
     BUILD_NUMBER
-        1
+        3
     TAG
-        "brdev-rogii-v3.50.4-re6074c"
+        "lddissue"
 )
