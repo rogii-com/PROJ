@@ -203,6 +203,49 @@ execute_process(
         "${DEBUG_PATH}"
 )
 
+# Rename debug libraries to avoid overwriting by release build
+# Note: On Windows, debug postfix is handled automatically by the build system
+if(UNIX AND NOT APPLE)
+    # Find the real library file (not symlinks)
+    file(
+        GLOB PROJ_DEBUG_LIBS
+        "${CMAKE_INSTALL_PREFIX}/lib/libproj.so.*"
+    )
+    
+    # Sort to get the most specific version (e.g., libproj.so.25.9.6.2)
+    list(SORT PROJ_DEBUG_LIBS)
+    list(REVERSE PROJ_DEBUG_LIBS)
+    
+    if(PROJ_DEBUG_LIBS)
+        list(GET PROJ_DEBUG_LIBS 0 REAL_LIB)
+        get_filename_component(LIB_NAME ${REAL_LIB} NAME)
+        string(REPLACE "libproj.so" "libproj_d.so" NEW_LIB_NAME ${LIB_NAME})
+        
+        # Remove old symlinks first
+        file(REMOVE "${CMAKE_INSTALL_PREFIX}/lib/libproj.so")
+        if(EXISTS "${CMAKE_INSTALL_PREFIX}/lib/libproj.so.25")
+            file(REMOVE "${CMAKE_INSTALL_PREFIX}/lib/libproj.so.25")
+        endif()
+        
+        # Rename the real library file
+        file(
+            RENAME
+            ${REAL_LIB}
+            "${CMAKE_INSTALL_PREFIX}/lib/${NEW_LIB_NAME}"
+        )
+        
+        # Recreate symlinks with new names
+        execute_process(
+            COMMAND ln -s ${NEW_LIB_NAME} libproj_d.so.25
+            WORKING_DIRECTORY "${CMAKE_INSTALL_PREFIX}/lib"
+        )
+        execute_process(
+            COMMAND ln -s libproj_d.so.25 libproj_d.so
+            WORKING_DIRECTORY "${CMAKE_INSTALL_PREFIX}/lib"
+        )
+    endif()
+endif()
+
 set(
     RELEASE_PATH
     "${PROJECT_ROOT_PATH}/build/release_${ARCH}"

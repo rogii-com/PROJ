@@ -1,7 +1,3 @@
-include(CMakeFindDependencyMacro)
-
-# Expose PROJ library and headers from this package location
-
 if(NOT TARGET PROJ::proj)
     add_library(
         PROJ::proj
@@ -10,52 +6,28 @@ if(NOT TARGET PROJ::proj)
     )
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-        file(GLOB _PROJ_DLL_RELEASE "${CMAKE_CURRENT_LIST_DIR}/bin/proj_*.dll")
-        list(FILTER _PROJ_DLL_RELEASE EXCLUDE REGEX ".*_d\\.dll$")
-        list(SORT _PROJ_DLL_RELEASE)
-        list(GET _PROJ_DLL_RELEASE 0 _PROJ_DLL_PATH)
-        if(NOT _PROJ_DLL_PATH)
-            message(FATAL_ERROR "PROJ runtime DLL not found in ${CMAKE_CURRENT_LIST_DIR}/bin")
-        endif()
-
-        file(GLOB _PROJ_DLL_DEBUG "${CMAKE_CURRENT_LIST_DIR}/bin/*_d.dll")
-        list(SORT _PROJ_DLL_DEBUG)
-        list(GET _PROJ_DLL_DEBUG 0 _PROJ_DLL_DEBUG_PATH)
-
-        set(_IMPLIB_RELEASE "${CMAKE_CURRENT_LIST_DIR}/lib/proj.lib")
-        set(_IMPLIB_DEBUG "${CMAKE_CURRENT_LIST_DIR}/lib/proj_d.lib")
-        if(NOT EXISTS "${_IMPLIB_DEBUG}")
-            set(_IMPLIB_DEBUG "${_IMPLIB_RELEASE}")
-        endif()
-
         set_target_properties(
             PROJ::proj
             PROPERTIES
                 IMPORTED_LOCATION
-                    ${_PROJ_DLL_PATH}
+                    ${CMAKE_CURRENT_LIST_DIR}/bin/proj_9.dll
                 IMPORTED_IMPLIB
-                    ${_IMPLIB_RELEASE}
+                    ${CMAKE_CURRENT_LIST_DIR}/lib/proj.lib
                 IMPORTED_LOCATION_DEBUG
-                    ${_PROJ_DLL_DEBUG_PATH}
+                    ${CMAKE_CURRENT_LIST_DIR}/bin/proj_9_d.dll
                 IMPORTED_IMPLIB_DEBUG
-                    ${_IMPLIB_DEBUG}
+                    ${CMAKE_CURRENT_LIST_DIR}/lib/proj_d.lib
                 INTERFACE_INCLUDE_DIRECTORIES
                     ${CMAKE_CURRENT_LIST_DIR}/include
         )
     else()
-        file(GLOB _PROJ_SO "${CMAKE_CURRENT_LIST_DIR}/lib/libproj*.so*")
-        list(SORT _PROJ_SO)
-        list(GET _PROJ_SO 0 _PROJ_SO_PATH)
-        if(NOT _PROJ_SO_PATH)
-            set(_PROJ_SO_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/libproj.so)
-        endif()
         set_target_properties(
             PROJ::proj
             PROPERTIES
                 IMPORTED_LOCATION
-                    ${_PROJ_SO_PATH}
+                    ${CMAKE_CURRENT_LIST_DIR}/lib/libproj.so.25.9.6.2
                 IMPORTED_LOCATION_DEBUG
-                    ${_PROJ_SO_PATH}
+                    ${CMAKE_CURRENT_LIST_DIR}/lib/libproj_d.so.25.9.6.2
                 INTERFACE_INCLUDE_DIRECTORIES
                     ${CMAKE_CURRENT_LIST_DIR}/include
         )
@@ -75,7 +47,6 @@ foreach(COMPONENT_NAME ${COMPONENT_NAMES})
     install(
         FILES
             $<TARGET_FILE:PROJ::proj>
-            $<$<CONFIG:Debug>:$<TARGET_FILE:PROJ::proj>>
         DESTINATION
             .
         COMPONENT
@@ -85,27 +56,16 @@ foreach(COMPONENT_NAME ${COMPONENT_NAMES})
 
     # Also place PROJ data files next to the runtime for simpler app deployment
     set(_PROJ_SHARE_DIR "${CMAKE_CURRENT_LIST_DIR}/share/proj")
-    if(EXISTS "${_PROJ_SHARE_DIR}/proj.db")
-        install(
-            FILES
-                "${_PROJ_SHARE_DIR}/proj.db"
-            DESTINATION
-                .
-            COMPONENT
-                ${COMPONENT_NAME}
-            EXCLUDE_FROM_ALL
-        )
-    endif()
-    if(EXISTS "${_PROJ_SHARE_DIR}/proj.ini")
-        install(
-            FILES
-                "${_PROJ_SHARE_DIR}/proj.ini"
-            DESTINATION
-                .
-            COMPONENT
-                ${COMPONENT_NAME}
-            EXCLUDE_FROM_ALL
-        )
-    endif()
+    install(
+        FILES
+            "${_PROJ_SHARE_DIR}/proj.db"
+            "${_PROJ_SHARE_DIR}/proj.ini"
+        DESTINATION
+            .
+        COMPONENT
+            ${COMPONENT_NAME}
+        EXCLUDE_FROM_ALL
+    )
+
 endforeach()
 
