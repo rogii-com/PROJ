@@ -45,8 +45,8 @@ set(
 
 foreach(COMPONENT_NAME ${COMPONENT_NAMES})
     install(
-        FILES
-            $<TARGET_FILE:PROJ::proj>
+        IMPORTED_RUNTIME_ARTIFACTS
+            PROJ::proj
         DESTINATION
             .
         COMPONENT
